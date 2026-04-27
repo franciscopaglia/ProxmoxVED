@@ -9,9 +9,9 @@ source <(curl -fsSL "$COMMUNITY_SCRIPTS_URL/misc/build.func")
 
 APP="Invidious"
 var_tags="${var_tags:-streaming}"
-var_cpu="${var_cpu:-4}"
-var_ram="${var_ram:-8192}"
-var_disk="${var_disk:-56}"
+var_cpu="${var_cpu:-2}"
+var_ram="${var_ram:-2048}"
+var_disk="${var_disk:-4}"
 var_os="${var_os:-debian}"
 var_version="${var_version:-13}"
 var_unprivileged="${var_unprivileged:-1}"
@@ -46,7 +46,12 @@ function update_script() {
     fi
 
     msg_info "Patching CURRENT_COMMIT macro for tarball build"
-    sed -i 's|{{ "#{`git rev-list HEAD --max-count=1 --abbrev-commit`.strip}" }}|"tarball"|' /opt/invidious/src/invidious.cr
+    sed -i \
+      's|{{ "#{`git rev-list HEAD --max-count=1 --abbrev-commit`.strip}" }}|"tarball"|' \
+      /opt/invidious/src/invidious.cr
+    sed -i \
+      's|{{ "#{`git rev-list HEAD --max-count=1 --abbrev-commit -- assets`.strip}" }}|"tarball"|' \
+      /opt/invidious/src/invidious.cr
     msg_ok "Patched CURRENT_COMMIT macro"
 
     msg_info "Rebuilding Invidious"
