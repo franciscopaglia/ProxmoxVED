@@ -57,7 +57,7 @@ database_url: postgres://${PG_DB_USER}:${PG_DB_PASS}@localhost:5432/${PG_DB_NAME
 check_tables: true
 
 invidious_companion:
-  - private_url: "http://127.0.0.1:11000/companion"
+  - private_url: "http://127.0.0.1:8282/companion"
 
 invidious_companion_key: "${SECRET_KEY}"
 
@@ -92,15 +92,29 @@ sed -e 's|User=invidious|User=root|' \
     -e 's|/home/invidious/invidious|/opt/invidious|g' \
   /opt/invidious/invidious.service >/etc/systemd/system/invidious.service
 
-# companion service uses SERVER_SECRET_KEY=CHANGE_ME and User/WorkingDirectory paths
-curl -fsSL https://github.com/iv-org/invidious-companion/raw/refs/heads/master/invidious-companion.service \
-  -o /etc/systemd/system/invidious-companion.service
-sed -i \
-  -e "s|CHANGE_ME|${SECRET_KEY}|g" \
-  -e 's|User=invidious|User=root|' \
-  -e 's|Group=invidious|Group=root|' \
-  -e 's|/home/invidious|/opt|g' \
-  /etc/systemd/system/invidious-companion.service
+# Find the actual companion binary (tarball may extract to a subdirectory)
+COMPANION_BIN=$(find /opt/invidious-companion -name "invidious_companion" -type f | head -1)
+COMPANION_DIR=$(dirname "$COMPANION_BIN")
+
+# Write companion service from scratch — avoids upstream service issues with
+# PrivateTmp/namespace directives that break inside LXC containers
+cat > /etc/systemd/system/invidious-companion.service << SVCEOF
+[Unit]
+Description=invidious-companion (companion for Invidious which handles all the video stream retrieval from YouTube servers)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=${COMPANION_DIR}
+ExecStart=${COMPANION_BIN}
+Environment=SERVER_SECRET_KEY=${SECRET_KEY}
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
+SVCEOF
 
 systemctl -q daemon-reload
 systemctl -q enable --now invidious invidious-companion
