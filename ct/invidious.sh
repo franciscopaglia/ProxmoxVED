@@ -45,14 +45,9 @@ function update_script() {
       CLEAN_INSTALL=1 fetch_and_deploy_gh_release "Invidious-Companion" "iv-org/invidious-companion" "prebuild" "latest" "/opt/invidious-companion" "invidious_companion-x86_64-unknown-linux-gnu.tar.gz"
     fi
 
-    msg_info "Patching CURRENT_COMMIT macro for tarball build"
-    sed -i \
-      's|{{ "#{`git rev-list HEAD --max-count=1 --abbrev-commit`.strip}" }}|"tarball"|' \
-      /opt/invidious/src/invidious.cr
-    sed -i \
-      's|{{ "#{`git rev-list HEAD --max-count=1 --abbrev-commit -- assets`.strip}" }}|"tarball"|' \
-      /opt/invidious/src/invidious.cr
-    msg_ok "Patched CURRENT_COMMIT macro"
+    msg_info "Patching git macros for tarball build"
+    perl -i -pe 's|\{\{\s*"#\{`git [^`]+`\.strip\}"\s*\}\}|"tarball"|g' /opt/invidious/src/invidious.cr
+    msg_ok "Patched git macros"
 
     msg_info "Rebuilding Invidious"
     cd /opt/invidious
