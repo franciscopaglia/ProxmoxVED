@@ -38,6 +38,10 @@ PG_DB_NAME="invidious" PG_DB_USER="invidious" setup_postgresql_db
 fetch_and_deploy_gh_release "Invidious" "iv-org/invidious" "tarball" "latest" "/opt/invidious"
 fetch_and_deploy_gh_release "Invidious Companion" "iv-org/invidious-companion" "prebuild" "latest" "/opt/invidious-companion" "invidious_companion-x86_64-unknown-linux-gnu.tar.gz"
 
+msg_info "Patching CURRENT_COMMIT macro for tarball build"
+sed -i 's|{{ "#{`git rev-list HEAD --max-count=1 --abbrev-commit`.strip}" }}|"tarball"|' /opt/invidious/src/invidious.cr
+msg_ok "Patched CURRENT_COMMIT macro"
+
 msg_info "Building Invidious"
 cd /opt/invidious
 $STD make
