@@ -38,14 +38,10 @@ PG_DB_NAME="invidious" PG_DB_USER="invidious" setup_postgresql_db
 fetch_and_deploy_gh_release "Invidious" "iv-org/invidious" "tarball" "latest" "/opt/invidious"
 fetch_and_deploy_gh_release "Invidious Companion" "iv-org/invidious-companion" "prebuild" "latest" "/opt/invidious-companion" "invidious_companion-x86_64-unknown-linux-gnu.tar.gz"
 
-msg_info "Patching CURRENT_COMMIT macro for tarball build"
-sed -i \
-  's|{{ "#{`git rev-list HEAD --max-count=1 --abbrev-commit`.strip}" }}|"tarball"|' \
-  /opt/invidious/src/invidious.cr
-sed -i \
-  's|{{ "#{`git rev-list HEAD --max-count=1 --abbrev-commit -- assets`.strip}" }}|"tarball"|' \
-  /opt/invidious/src/invidious.cr
-msg_ok "Patched CURRENT_COMMIT macro"
+msg_info "Patching git macros for tarball build"
+# Replace ALL Crystal compile-time macros that shell out to git with a static string
+perl -i -pe 's|\{\{\s*"#\{`git [^`]+`\.strip\}"\s*\}\}|"tarball"|g' /opt/invidious/src/invidious.cr
+msg_ok "Patched git macros"
 
 msg_info "Building Invidious"
 cd /opt/invidious
