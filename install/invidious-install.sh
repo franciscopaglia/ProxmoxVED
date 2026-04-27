@@ -51,37 +51,21 @@ msg_info "Configuring Invidious"
 SECRET_KEY="$(openssl rand -hex 8)"   # exactly 16 chars
 HMAC_KEY="$(openssl rand -hex 32)"
 
-# Build config.yml from the example, substituting all required values.
-# The config.example.yml uses a YAML 'db:' block for the database connection
-# which we replace with the flat 'database_url:' form instead.
-# companion private_url uses port 11000 (invidious-companion default).
-cp /opt/invidious/config/config.example.yml /opt/invidious/config/config.yml
+# Write config.yml directly to avoid fragile sed surgery on the example file
+cat > /opt/invidious/config/config.yml << YMLEOF
+database_url: postgres://${PG_DB_USER}:${PG_DB_PASS}@localhost:5432/${PG_DB_NAME}
+check_tables: true
 
-# Remove the legacy db: block (lines from 'db:' through 'port: 5432')
-sed -i '/^db:/,/^  port: 5432/d' /opt/invidious/config/config.yml
+invidious_companion:
+  - private_url: "http://127.0.0.1:11000/companion"
 
-# Inject database_url after the check_tables line
-sed -i "s|^#database_url:.*|database_url: postgres://${PG_DB_USER}:${PG_DB_PASS}@localhost:5432/${PG_DB_NAME}|" \
-  /opt/invidious/config/config.yml
+invidious_companion_key: "${SECRET_KEY}"
 
-# Enable check_tables
-sed -i 's|^#check_tables:.*|check_tables: true|' /opt/invidious/config/config.yml
+hmac_key: "${HMAC_KEY}"
 
-# Uncomment invidious_companion block and set private_url
-sed -i 's|^#invidious_companion:|invidious_companion:|' /opt/invidious/config/config.yml
-sed -i 's|^# - private_url:.*\|^#  - private_url:.*|  - private_url: "http://127.0.0.1:11000/companion"|' \
-  /opt/invidious/config/config.yml
-
-# Use perl for the companion private_url line since sed alternation is unreliable across platforms
-perl -i -pe 's|^#\s*- private_url:.*|  - private_url: "http://127.0.0.1:11000/companion"|' \
-  /opt/invidious/config/config.yml
-
-# Set companion key (must be exactly 16 chars)
-sed -i "s|^#invidious_companion_key:.*|invidious_companion_key: \"${SECRET_KEY}\"|" \
-  /opt/invidious/config/config.yml
-
-# Set HMAC key (mandatory)
-sed -i "s|^hmac_key:.*|hmac_key: \"${HMAC_KEY}\"|" /opt/invidious/config/config.yml
+port: 3000
+host_binding: 0.0.0.0
+YMLEOF
 
 chmod 600 /opt/invidious/config/config.yml
 
