@@ -50,13 +50,14 @@ msg_ok "Built Invidious"
 
 msg_info "Configuring Invidious"
 SECRET_KEY="$(openssl rand -hex 16)"
+HMAC_KEY="$(openssl rand -hex 32)"
 sed -e '/^db/,/dbname/d' \
-  -e "s|^#database_.*|database_url: postgres://${PG_DB_USER}:${PG_DB_PASS}@localhost:5432/${PG_DB_NAME}|" \
-  -e 's|^#check_.*|check_tables: true|' \
+  -e "s|^#database_url:.*|database_url: postgres://${PG_DB_USER}:${PG_DB_PASS}@localhost:5432/${PG_DB_NAME}|" \
+  -e 's|^#check_tables:.*|check_tables: true|' \
   -e 's|^#invidious_companion:|invidious_companion:|' \
-  -e 's|^#  - private_|  - private_|' \
-  -e "s|^#invidious_companion_key:.*|inviduous_companion_key: \"${SECRET_KEY}\"|" \
-  -e "s|hmac_key:.*|hmac_key: \"$(openssl rand -hex 32)\"|" \
+  -e 's|^#  - private_url:.*|  - private_url: http://127.0.0.1:11000|' \
+  -e "s|^#invidious_companion_key:.*|invidious_companion_key: \"${SECRET_KEY}\"|" \
+  -e "s|^hmac_key:.*|hmac_key: \"${HMAC_KEY}\"|" \
   /opt/invidious/config/config.example.yml >/opt/invidious/config/config.yml
 chmod 600 /opt/invidious/config/config.yml
 
