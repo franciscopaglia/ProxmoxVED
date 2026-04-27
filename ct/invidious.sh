@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-source <(curl -fsSL https://raw.githubusercontent.com/franciscopaglia/ProxmoxVED/main/misc/build.func)
+export COMMUNITY_SCRIPTS_URL="https://raw.githubusercontent.com/franciscopaglia/ProxmoxVED/main"
+source <(curl -fsSL "$COMMUNITY_SCRIPTS_URL/misc/build.func")
 
 # Copyright (c) 2021-2026 community-scripts ORG
 # Author: vhsdream
@@ -8,9 +9,9 @@ source <(curl -fsSL https://raw.githubusercontent.com/franciscopaglia/ProxmoxVED
 
 APP="Invidious"
 var_tags="${var_tags:-streaming}"
-var_cpu="${var_cpu:-2}"
-var_ram="${var_ram:-2048}"
-var_disk="${var_disk:-4}"
+var_cpu="${var_cpu:-4}"
+var_ram="${var_ram:-8192}"
+var_disk="${var_disk:-56}"
 var_os="${var_os:-debian}"
 var_version="${var_version:-13}"
 var_unprivileged="${var_unprivileged:-1}"
@@ -43,6 +44,10 @@ function update_script() {
     if check_for_gh_release "Invidious-Companion" "iv-org/invidious-companion"; then
       CLEAN_INSTALL=1 fetch_and_deploy_gh_release "Invidious-Companion" "iv-org/invidious-companion" "prebuild" "latest" "/opt/invidious-companion" "invidious_companion-x86_64-unknown-linux-gnu.tar.gz"
     fi
+
+    msg_info "Patching CURRENT_COMMIT macro for tarball build"
+    sed -i 's|{{ "#{`git rev-list HEAD --max-count=1 --abbrev-commit`.strip}" }}|"tarball"|' /opt/invidious/src/invidious.cr
+    msg_ok "Patched CURRENT_COMMIT macro"
 
     msg_info "Rebuilding Invidious"
     cd /opt/invidious
